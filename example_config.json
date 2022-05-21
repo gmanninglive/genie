@@ -1,0 +1,32 @@
+[
+  {
+    "title": "new test file",
+    "directory": "gen/test/testing",
+    "filename": "test.js",
+    "template": "tpl.hbs",
+    "ctxVars": {
+      "title": "My New Post",
+      "body": "This is my first post!"
+    }
+  },
+  {
+    "title": "second test file",
+    "directory": "gen/test/testing",
+    "filename": "test1.js",
+    "template": "tpl.hbs",
+    "ctxVars": {
+      "title": "My New Post",
+      "body": "This is my first post!"
+    }
+  },
+  {
+    "title": "third test file",
+    "directory": "gen/test/testing",
+    "filename": "test2.js",
+    "template": "tpl.hbs",
+    "ctxVars": {
+      "title": "My New Post",
+      "body": "This is my first post!"
+    }
+  }
+]
