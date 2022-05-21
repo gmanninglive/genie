@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
-  "fmt"
 	"path/filepath"
 
 	"github.com/aymerick/raymond"
@@ -41,7 +41,8 @@ type Command struct {
 type Config []Command
 
 func loadConfig(config_location string) Config {
-  var config Config	
+  var config Config
+  config_dir := filepath.Dir(config_location)
   
   f, err := os.ReadFile(config_location)
   check(err)
@@ -49,6 +50,7 @@ func loadConfig(config_location string) Config {
   json.Unmarshal([]byte(f), &config)
 
   for i := 0; i < len(config); i++ {
+    config[i].Template = filepath.Join(config_dir, config[i].Template)
     config[i].Output = filepath.Join(config[i].Directory, config[i].Filename)
   }
   
@@ -57,6 +59,7 @@ func loadConfig(config_location string) Config {
 
 func runCommand(command Command) string {
   parse, err := raymond.ParseFile(command.Template)
+  check(err)
   withCtx, err := parse.Exec(command.CtxVars)
   check(err)
 
