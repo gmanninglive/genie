@@ -1,21 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
 	"path/filepath"
-
-	"github.com/aymerick/raymond"
-	"github.com/manifoldco/promptui"
 )
-
-func check(e error) {
-  if e != nil {
-      panic(e)
-  }
-}
 
 type Flags struct {
   Config string
@@ -30,90 +19,35 @@ func readflags() Flags {
   return res
 }
 
-type MakeCMD struct {
-  Directory string
-  Filename string
-  Template string
-  Output string
-}
+func scheduler(t Task) {
+  for i := 0; i < len(t.Schedule); i++ {
+    current := t.Schedule[i]
 
-type Command struct {
-  Title string
-  Make []MakeCMD
-  CtxVars map[string]string
-  Base string
-}
-
-type Config []Command
-
-func loadConfig(config_location string) Config {
-  var config Config
-  
-  f, err := os.ReadFile(config_location)
-  check(err)
-  
-  json.Unmarshal([]byte(f), &config)
-  
-  for i := 0; i < len(config); i++ {
-    config[i].Base = filepath.Dir(config_location)
-  }
-  
-  return config
-}
-
-func runCommand(command Command) {
-  for i := 0; i < len(command.Make); i++ {
-    template_path := filepath.Join(command.Base, command.Make[i].Template)
-
-    parse, err := raymond.ParseFile(template_path)
-    check(err)
-    withCtx, err := parse.Exec(command.CtxVars)
-    check(err)
-
-    command.Make[i].Output = filepath.Join(command.Make[i].Directory, command.Make[i].Filename)
-
-    writeFile(command.Make[i], []byte(withCtx))
-    fmt.Printf("created: %s\n", command.Make[i].Output)
+    runCommand(current, t.Base, t.Vars)
   }
 }
 
-func writeFile(make MakeCMD, template []byte) {
-  if _, err := os.Stat(make.Directory); os.IsNotExist(err) {
-    err := os.MkdirAll(make.Directory, 0700)
-    check(err)
-  }
+func runCommand(c Command, __base string, ctx CtxVars) {
+  template_path := filepath.Join(__base, c.Template)
 
-  err := os.WriteFile(make.Output, []byte(template), 0644)
-  check(err)
+  parsed := HandleBars(template_path, ctx)
+
+  c.Output = filepath.Join(c.Directory, c.Filename)
+
+  WriteFile(c, []byte(parsed))
+  fmt.Printf("created: %s\n", c.Output)
 }
 
 func main() {
   flags := readflags()
-  config := loadConfig(flags.Config)
-  options := make([]string, len(config))
+  config := LoadConfig(flags.Config)
+  fmt.Println(config)
 
-  for i := 0; i < len(config); i++ {
-    options[i] = config[i].Title
-  }
+  selected, err := SelectTask(config)
+  Check(err)
 
-  prompt := promptui.Select{
-		Label: "Select a Command",
-		Items: options,
-	}
+  withVars := SetVars(config[selected])
 
-	_, result, err := prompt.Run()
-
-	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return
-	}
-  
-  for i := 0; i < len(config); i++ {
-    if config[i].Title == result {
-      runCommand(config[i])
-
-      return
-    }
-  }
+  scheduler(withVars)
 }
  
