@@ -13,8 +13,6 @@ func LoadConfig(config_location string) Config {
   
   json.Unmarshal([]byte(f), &config)
   
-  
-  
   out := make(Config, len(config))
 
   for i := 0; i < len(config); i++ {

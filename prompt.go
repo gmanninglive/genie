@@ -4,7 +4,15 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-func SelectTask(config Config) (int, error){
+func PromptUser(c Config) Task {
+	selected, err := selectTask(c)
+	Check(err)
+
+	task_with_vars := setVars(c[selected])
+	return task_with_vars
+}
+
+func selectTask(config Config) (int, error){
   options := make([]string, len(config))
 
   for i := 0; i < len(config); i++ {
@@ -21,7 +29,7 @@ func SelectTask(config Config) (int, error){
   return idx, err
 }
 
-func SetVars(t Task) Task{
+func setVars(t Task) Task{
 	t.Vars = make(CtxVars, len(t.Ctx))
 	for i := 0; i < len(t.Ctx); i++ {
 		label := t.Ctx[i]

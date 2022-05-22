@@ -15,6 +15,7 @@ type Task struct {
   Ctx []string
   Vars CtxVars
   Base string
+  parser Parser
 }
 
 type Config []Task
