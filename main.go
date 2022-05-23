@@ -25,7 +25,6 @@ func main() {
 
   selected := PromptUser(config)
 
-  selected.InitParser()
   selected.Run()
 }
  
