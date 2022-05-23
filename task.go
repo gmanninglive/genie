@@ -47,7 +47,7 @@ func (t Task) runCommand(c Command, tplvars TplVars) {
 func (t Task) parseSchedule(c Command) Command{
   c.Directory = raymond.MustRender(c.Directory, t.Vars)
   c.Filename = raymond.MustRender(c.Filename, t.Vars)
-  c.Template = filepath.Join(t.Base, c.Template)
+  c.Template = filepath.Join(GENIE.BASE, c.Template)
 
   return c
 }

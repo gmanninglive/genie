@@ -2,27 +2,56 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
-type Flags struct {
+type Env struct {
   Config string
+  BASE string
 }
 
-func readflags() Flags {
-  configPtr := flag.String("config", "config.json", "location of config.json")
+var GENIE Env
+
+func Check(e error) {
+  if e != nil {
+      panic(e)
+  }
+}
+
+func readflags() {
+  var config_location string
+  config_env, isEnvSet := os.LookupEnv("GENIE_CONFIG")
+
+  __dir, err := os.UserHomeDir()
+  Check(err)
+
+  configPtr := flag.String("config", "", "set location of config.json:\n - Include filename,\n - Custom filnames are accepted aslong as it retains json format,\n - Lead with ~ to refer to home directory")
+
   flag.Parse()
 
-  res := Flags{ Config : *configPtr }
+  switch {
+    case isEnvSet:
+      config_location = strings.Replace(config_env, "~", __dir, 1)
+    case *configPtr != "":
+      config_location = strings.Replace(*configPtr, "~", __dir, 1)
+    default:
+      config_location = "config.json"
+  }
 
-  return res
+  GENIE.BASE = filepath.Dir(config_location)
+  GENIE.Config = config_location
+
+  fmt.Printf("Loading config from: %s\n", GENIE.Config)
 }
 
 func main() {
-  flags := readflags()
-  config := LoadConfig(flags.Config)
+  readflags()
+
+  config := LoadConfig(GENIE.Config)
 
   selected := PromptUser(config)
-  selected.Base = filepath.Dir(flags.Config)
   selected.Run()
 }
