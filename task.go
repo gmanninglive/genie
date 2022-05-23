@@ -13,6 +13,7 @@ type Task struct {
   Params []string
   Vars TplVars
   Parser Parser
+  Base string
 }
 
 type Command struct {
@@ -35,9 +36,7 @@ func (t Task) Run() {
 }
 
 func (t Task) runCommand(c Command, tplvars TplVars) {
-  template_path := filepath.Join(__base, c.Template)
-  
-  parsed := t.Parser.Parse(template_path, tplvars)
+  parsed := t.Parser.Parse(c.Template, tplvars)
 
   c.Output = filepath.Join(c.Directory, c.Filename)
 
@@ -48,6 +47,7 @@ func (t Task) runCommand(c Command, tplvars TplVars) {
 func (t Task) parseSchedule(c Command) Command{
   c.Directory = raymond.MustRender(c.Directory, t.Vars)
   c.Filename = raymond.MustRender(c.Filename, t.Vars)
+  c.Template = filepath.Join(t.Base, c.Template)
 
   return c
 }
