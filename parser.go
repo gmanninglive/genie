@@ -9,7 +9,7 @@ import (
 
 type Parser struct {}
 
-func (p Parser) Parse(template_path string, vars CtxVars) string {
+func (p Parser) Parse(template_path string, vars TplVars) string {
   parse, err := raymond.ParseFile(template_path)
 
   Check(err)

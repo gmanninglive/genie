@@ -30,9 +30,9 @@ func selectTask(config Config) (int, error){
 }
 
 func setVars(t Task) Task{
-	t.Vars = make(CtxVars, len(t.Ctx))
-	for i := 0; i < len(t.Ctx); i++ {
-		label := t.Ctx[i]
+	t.Vars = make(TplVars, len(t.Params))
+	for i := 0; i < len(t.Params); i++ {
+		label := t.Params[i]
 		t.Vars[label] = prompt(label)
 	}
 	return t

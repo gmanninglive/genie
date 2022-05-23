@@ -8,6 +8,8 @@ type Flags struct {
   Config string
 }
 
+var __base string
+
 func readflags() Flags {
   configPtr := flag.String("config", "config.json", "location of config.json")
   flag.Parse()
@@ -22,6 +24,5 @@ func main() {
   config := LoadConfig(flags.Config)
 
   selected := PromptUser(config)
-
   selected.Run()
 }
