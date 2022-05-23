@@ -1,0 +1,34 @@
+[
+  {
+    "title": "NextJs Page",
+    "schedule": [
+      {
+        "directory": "pages",
+        "filename": "page.tsx",
+        "template": "templates/pages/nextpage.hbs"
+      }
+    ],
+    "params": ["name"]
+  },
+  {
+    "title": "React Component",
+    "schedule": [
+      {
+        "directory": "components/{{ toLower name }}",
+        "filename": "{{ toTitle name }}.tsx",
+        "template": "templates/components/component.hbs"
+      },
+      {
+        "directory": "components/{{ toLower name }}",
+        "filename": "index.ts",
+        "template": "templates/components/index.hbs"
+      },
+      {
+        "directory": "components/{{ toLower name }}",
+        "filename": "{{ toTitle name }}.test.tsx",
+        "template": "templates/components/component_test.hbs"
+      }
+    ],
+    "params": ["name"]
+  }
+]
