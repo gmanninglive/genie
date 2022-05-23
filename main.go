@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 )
 
 type Flags struct {
@@ -21,10 +20,8 @@ func readflags() Flags {
 func main() {
   flags := readflags()
   config := LoadConfig(flags.Config)
-  fmt.Println(config)
 
   selected := PromptUser(config)
 
   selected.Run()
 }
- 
