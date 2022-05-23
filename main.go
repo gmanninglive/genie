@@ -33,10 +33,10 @@ func readflags() {
   flag.Parse()
 
   switch {
-    case isEnvSet:
-      config_location = strings.Replace(config_env, "~", __dir, 1)
     case *configPtr != "":
       config_location = strings.Replace(*configPtr, "~", __dir, 1)
+    case isEnvSet:
+      config_location = strings.Replace(config_env, "~", __dir, 1)
     default:
       config_location = "config.json"
   }
