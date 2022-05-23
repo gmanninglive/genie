@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/aymerick/raymond"
+	"github.com/iancoleman/strcase"
 )
 
 type Parser struct {}
@@ -34,5 +35,9 @@ func (p Parser) Init() {
 
   raymond.RegisterHelper("toTitle", func(val string) string {
     return strings.Title(strings.ToLower(val))
+  })
+
+  raymond.RegisterHelper("toCamel", func(val string) string {
+    return strcase.ToCamel(val)
   })
 }
