@@ -21,23 +21,14 @@ func (p Parser) Parse(template_path string, vars TplVars) string {
 }
 
 func (p Parser) Init() {
-  raymond.RegisterHelper("add", func(val1, val2 int) string {
-    return strconv.Itoa(val1 + val2)
-  })
+  helpers := map[string]interface{} {
+    "add": func(val1, val2 int) string { return strconv.Itoa(val1 + val2) },
+    "toUpper": func(val string) string { return strings.ToUpper(val) },
+    "toLower": func(val string) string { return strings.ToLower(val) },
+    "toTitle": func(val string) string { return strings.Title(strings.ToLower(val)) },
+    "toCamel": func(val string) string { return strcase.ToCamel(val) },
+    "conCat": func(val1 string, val2 string) string { res := val1 + val2; return res },
+  }
 
-  raymond.RegisterHelper("toUpper", func(val string) string {
-    return strings.ToUpper(val)
-  })
-
-  raymond.RegisterHelper("toLower", func(val string) string {
-    return strings.ToLower(val)
-  })
-
-  raymond.RegisterHelper("toTitle", func(val string) string {
-    return strings.Title(strings.ToLower(val))
-  })
-
-  raymond.RegisterHelper("toCamel", func(val string) string {
-    return strcase.ToCamel(val)
-  })
+  raymond.RegisterHelpers(helpers)
 }
