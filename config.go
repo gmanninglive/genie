@@ -2,20 +2,42 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config []Task
 
-func LoadConfig(config_location string) Config {
+func LoadConfig(f Flags) Config {
   var config []Task
-  GENIE.BASE = filepath.Dir(config_location)
+  var config_location string
 
-  f, err := os.ReadFile(config_location)
+  config_env, isEnvSet := os.LookupEnv("GENIE_CONFIG")
+
+  __dir, err := os.UserHomeDir()
   Check(err)
 
-  json.Unmarshal([]byte(f), &config)
+  switch {
+    case f.Config != "":
+      config_location = strings.Replace(f.Config, "~", __dir, 1)
+    case isEnvSet:
+      config_location = strings.Replace(config_env, "~", __dir, 1)
+    default:
+      config_location = "config.json"
+  }
+
+  // Set global env
+  GENIE.BASE = filepath.Dir(config_location)
+  GENIE.Config = config_location
+
+  fmt.Printf("Loading config from: %s\n", config_location)
+
+  file, err := os.ReadFile(config_location)
+  Check(err)
+
+  json.Unmarshal([]byte(file), &config)
 
   return config
 }

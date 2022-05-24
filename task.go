@@ -28,8 +28,7 @@ type TplVars map[string]string
 func (t Task) Run() {
   t.Parser.Init()
 
-  for i := 0; i < len(t.Schedule); i++ {
-    current := t.Schedule[i]
+  for _, current := range t.Schedule {
     current = t.parseSchedule(current)
     t.runCommand(current, t.Vars)
   }
