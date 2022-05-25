@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"os"
 )
 
 type Env struct {
@@ -22,20 +22,44 @@ func Check(e error) {
   }
 }
 
-func readflags() Flags {
-  configPtr := flag.String("config", "", "set location of config.json:\n - Include filename,\n - Custom filnames are accepted aslong as it retains json format,\n - Lead with ~ to refer to home directory")
-  
-  flag.Parse()
+var helpInfo string = 
+"Flag\t\tDescription\n-c --config\tSet location of config.json:\n\t\t- Include filename,\n\t\t- Custom filnames are accepted aslong as it retains json format,\n\t\t- Lead with ~ to refer to home directory\n"
 
-  return Flags{ Config: *configPtr }
+func ReadFlags(args []string) Flags {
+  var config string
+
+  for i := 0; i < len(args); i++ {
+    val := args[i]
+
+    switch val {
+    case "-c", "--config":
+      config = args[i + 1]
+      i++
+    case "-h":
+      fmt.Print(helpInfo)
+
+      os.Exit(0)
+    default:
+      fmt.Printf("Argument %s not recognised please refer to usage below:\n\n %s", val, helpInfo)
+
+      os.Exit(0)
+    }
+  }
+
+  return Flags{ Config: config}
 }
 
 func main() {
-  flags := readflags()
+  var flags Flags
+
+  args := os.Args[1:]
+  if args != nil {
+    flags = ReadFlags(args)
+  }
 
   config := LoadConfig(flags)
 
   selected := PromptUser(config)
-  fmt.Printf("%s\n", selected)
+
   selected.Run()
 }
