@@ -5,18 +5,17 @@ import (
 )
 
 func PromptUser(c Config) Task {
-	selected, err := selectTask(c)
-	Check(err)
+	selected := selectTask(c)
 
-	task_with_vars := setVars(c[selected])
-	return task_with_vars
+	taskWithVars := setVars(c[selected])
+	return taskWithVars
 }
 
-func selectTask(config Config) (int, error){
-  options := make([]string, len(config))
+func selectTask(config Config) int {
+  var options []string
 
-  for i := 0; i < len(config); i++ {
-    options[i] = config[i].Title
+  for _, task := range config {
+    options = append(options, task.Title)
   }
 
   prompt := promptui.Select{
@@ -25,14 +24,15 @@ func selectTask(config Config) (int, error){
 	}
 
 	idx, _, err := prompt.Run()
+	Check(err)
 
-  return idx, err
+  return idx
 }
 
 func setVars(t Task) Task{
 	t.Vars = make(TplVars, len(t.Params))
-	for i := 0; i < len(t.Params); i++ {
-		label := t.Params[i]
+
+	for _, label := range t.Params{
 		t.Vars[label] = prompt(label)
 	}
 	return t
@@ -40,11 +40,10 @@ func setVars(t Task) Task{
 
 func prompt(label string) string {
 	prompt := promptui.Prompt{
-		Label:   label,
+		Label: label,
 	}
 
 	result, err := prompt.Run()
-
 	Check(err)
 
 	return result
