@@ -29,10 +29,13 @@ func TestLex(t *testing.T) {
 
 		l := New("hbs", string(f))
 		var received []Token
-		for l.State != nil {
-			tok := l.NextToken();
+		for {
+			select {
+			case tok := <-l.Tokens:
+			l.Run()
 			received = append(received, tok)
-			t.Log("Token", tok.Typ)
+			t.Log("Token", tok.Val)
+			}
 		}
 
 		t.Log("length", len(received))

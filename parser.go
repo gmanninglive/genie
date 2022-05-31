@@ -1,34 +1,109 @@
 package main
 
 import (
-	"strconv"
+	"fmt"
+	"genie/lexer"
+	"os"
 	"strings"
 
-	"github.com/aymerick/raymond"
-	"github.com/iancoleman/strcase"
+	"github.com/gmanninglive/golex"
 )
 
-type Parser struct {}
+type Token = golex.Token
 
-func (p Parser) Parse(templatePath string, vars TplVars) string {
-  parse, err := raymond.ParseFile(templatePath)
-
-  Check(err)
-  withCtx, err := parse.Exec(vars)
-  Check(err)
-
-  return withCtx
+type Parser struct {
+	Queue *Pqueue
+	out   strings.Builder
 }
 
-func (p Parser) Init() {
-  helpers := map[string]interface{} {
-    "add": func(val1, val2 int) string { return strconv.Itoa(val1 + val2) },
-    "toUpper": func(val string) string { return strings.ToUpper(val) },
-    "toLower": func(val string) string { return strings.ToLower(val) },
-    "toTitle": func(val string) string { return strings.Title(strings.ToLower(val)) },
-    "toCamel": func(val string) string { return strcase.ToCamel(val) },
-    "conCat": func(val1 string, val2 string) string { res := val1 + val2; return res },
-  }
+// Public method for initialising and running the parser
+func (p Parser) Parse(templatePath string, vars TplVars) string {
+	file, err := os.ReadFile(templatePath)
+	if err != nil {
+		panic(err)
+	}
 
-  raymond.RegisterHelpers(helpers)
+	fileStr := string(file)
+
+	l := lexer.Lex(fileStr)
+
+	p.run(l)
+
+	return p.out.String()
+}
+
+// Runs the parser
+// Initialises a queue
+// Runs the parser state machine concurrently
+// Listening for tokens from the lexer
+func (p *Parser) run(l *golex.Lexer) {
+	p.Queue = p.Queue.Init()
+	go p.stateMachine()
+	for {
+		token, done := l.Listen()
+		if done {
+			p.Queue.finished <- true
+			return
+		}
+		p.Queue.push(token)
+	}
+}
+
+// Parser statemachine
+// Receives tokens from the queue and performs actions
+// Until either EOf token received or queue finished message received
+func (p *Parser) stateMachine() {
+	for {
+		select {
+		case tok := <-p.Queue.tokens:
+			switch tok.Typ {
+			case lexer.TokenText:
+				p.parseText(tok)
+			case lexer.TokenNewLine:
+				p.parseNewLine(tok)
+			case golex.TokenEOF:
+				return
+			}
+		case <-p.Queue.finished:
+			return
+		}
+	}
+}
+
+// Sends the token value to the output string builder
+func (p *Parser) parseText(tok Token) {
+	p.out.Grow(len(tok.Val))
+	fmt.Fprintf(&p.out, tok.Val)
+}
+
+func (p *Parser) parseNewLine(tok Token) {
+	p.out.Grow(len("\n"))
+	fmt.Fprintf(&p.out, tok.Val)
+}
+
+// Parser queue
+// Containing a channel for tokens,
+// And a channel to notify when finished
+type Pqueue struct {
+	tokens   chan Token
+	finished chan bool
+}
+
+// Initialise parser queue, returns queue pointer
+func (q *Pqueue) Init() *Pqueue {
+	return &Pqueue{
+		tokens:   make(chan Token, 2),
+		finished: make(chan bool),
+	}
+}
+
+// Add job to back of queue
+func (q *Pqueue) push(t Token) {
+	q.tokens <- t
+}
+
+// Pop from front of queue
+// Not really needed right now... may delete
+func (q *Pqueue) Pop() {
+	<-q.tokens
 }
