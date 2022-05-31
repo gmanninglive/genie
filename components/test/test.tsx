@@ -1,9 +1,0 @@
-type Props = {
-  data?: any;
-}
-
-export const {{toTitle name}} : React.FC<Props> = ({ data }) => {
-  return (
-    <>
-    </>
-  )

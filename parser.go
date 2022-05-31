@@ -61,6 +61,14 @@ func (p *Parser) stateMachine() {
 				p.parseText(tok)
 			case lexer.TokenNewLine:
 				p.parseNewLine(tok)
+			case lexer.TokenOpenBlock:
+				// ignore
+			case lexer.TokenCloseBlock:
+				// ignore
+			case lexer.TokenIdentifier:
+				p.parseIdentifier(tok)
+			case lexer.TokenVariable:
+				p.parseVariable(tok)
 			case golex.TokenEOF:
 				return
 			}
@@ -78,6 +86,16 @@ func (p *Parser) parseText(tok Token) {
 
 func (p *Parser) parseNewLine(tok Token) {
 	p.out.Grow(len("\n"))
+	fmt.Fprintf(&p.out, tok.Val)
+}
+
+func (p *Parser) parseIdentifier(tok Token) {
+	p.out.Grow(len(tok.Val))
+	fmt.Fprintf(&p.out, tok.Val)
+}
+
+func (p *Parser) parseVariable(tok Token) {
+	p.out.Grow(len(tok.Val))
 	fmt.Fprintf(&p.out, tok.Val)
 }
 
