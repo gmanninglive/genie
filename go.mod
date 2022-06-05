@@ -3,6 +3,7 @@ module genie
 go 1.18
 
 require (
+	github.com/ettle/strcase v0.1.1
 	github.com/gmanninglive/golex v0.0.101
 	github.com/manifoldco/promptui v0.9.0
 )

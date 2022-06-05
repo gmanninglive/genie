@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"genie/helpers"
 	"genie/lexer"
 	"os"
 	"strings"
@@ -12,16 +13,20 @@ import (
 type Token = golex.Token
 
 type Parser struct {
-	Queue *Pqueue
-	out   strings.Builder
+	Queue   *Pqueue
+	out     strings.Builder
+	vars    TplVars
+	Helpers map[string]interface{}
 }
 
 // Public method for initialising and running the parser
 func (p Parser) Parse(templatePath string, vars TplVars) string {
+	p.Helpers = helpers.Init()
 	file, err := os.ReadFile(templatePath)
 	if err != nil {
 		panic(err)
 	}
+	p.vars = vars
 
 	fileStr := string(file)
 
@@ -65,10 +70,10 @@ func (p *Parser) stateMachine() {
 				// ignore
 			case lexer.TokenCloseBlock:
 				// ignore
+			case lexer.TokenDotIdentifier:
+				p.parseDotIdentifier(tok)
 			case lexer.TokenIdentifier:
 				p.parseIdentifier(tok)
-			case lexer.TokenVariable:
-				p.parseVariable(tok)
 			case golex.TokenEOF:
 				return
 			}
@@ -89,14 +94,24 @@ func (p *Parser) parseNewLine(tok Token) {
 	fmt.Fprintf(&p.out, tok.Val)
 }
 
-func (p *Parser) parseIdentifier(tok Token) {
-	p.out.Grow(len(tok.Val))
-	fmt.Fprintf(&p.out, tok.Val)
+func (p *Parser) parseDotIdentifier(tok Token) {
+	fmt.Printf("Next Position %o\n", len(p.out.String()))
+
+	helper := p.Helpers[tok.Val]
+	fmt.Printf("helper: %s\n", helper)
+	args := make([]Token, 1)
+	for i := range args {
+		args[i] = <-p.Queue.tokens
+	}
+	fmt.Println(args)
 }
 
-func (p *Parser) parseVariable(tok Token) {
-	p.out.Grow(len(tok.Val))
-	fmt.Fprintf(&p.out, tok.Val)
+func (p *Parser) parseIdentifier(tok Token) {
+	fmt.Println(len(tok.Val), tok.Val)
+	if val, isIn := p.vars[strings.TrimSpace(tok.Val)]; isIn {
+		p.out.Grow(len(val))
+		fmt.Fprintf(&p.out, val)
+	}
 }
 
 // Parser queue

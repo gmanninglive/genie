@@ -1,4 +1,4 @@
-package main
+package helpers
 
 import (
 	"reflect"
@@ -10,17 +10,20 @@ func TestInit(t *testing.T) {
 	Init()
 
 	funcVal := helpers["ifHelper"]
-	
+
 	// argType := funcVal.Type().In(0)
-	args := make([]reflect.Value, 0)
 
 	// for i := range args {
 	// 	if canBeNil(argType) {
 	// 		args[i] = reflect.Zero(argType)
 	// 	}
 	// }
-	
-	t.Log(funcVal.Call(args))
+	req := reflect.TypeOf(funcVal).NumIn()
+
+	//args := reflect.ValueOf("string")
+	//res := reflect.ValueOf(funcVal).Call([]reflect.Value{args})
+	//t.Log(res)
+	t.Log(req)
 }
 
 func canBeNil(typ reflect.Type) bool {

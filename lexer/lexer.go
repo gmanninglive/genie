@@ -9,13 +9,14 @@ const (
 	TokenNewLine
 	TokenOpenBlock
 	TokenCloseBlock
-	TokenIdentifier
-	TokenVariable
+	TokenDotIdentifier // An Identifier starting with . aka helper function
+	TokenIdentifier    // An Identifier to be parsed with context / helper
 )
 
 const OpenBlock = "{{"
 const CloseBlock = "}}"
 const NewLine = "\n"
+const EOF = golex.EOF
 
 func baseStateFn(l *golex.Lexer) golex.StateFn {
 	for {
@@ -46,44 +47,63 @@ func baseStateFn(l *golex.Lexer) golex.StateFn {
 func lexOpenBlock(l *golex.Lexer) golex.StateFn {
 	l.Current += len(OpenBlock)
 	l.Emit(TokenOpenBlock)
-	return baseStateFn
+
+	if golex.IsSpace(l.Next()) {
+		l.Ignore()
+	}
+
+	if l.NextHasPrefix(".") {
+		return lexDotIndentifier
+	}
+
+	return lexIdentifier
 }
 
-func lexIndentifier(l *golex.Lexer) golex.StateFn {
+func lexDotIndentifier(l *golex.Lexer) golex.StateFn {
 	for {
-		if golex.IsSpace(l.Next()) {
-			l.Backup()
-			l.Emit(TokenIdentifier)
-			l.Ignore()
-			return lexVariable
-		}
 		if l.NextHasPrefix(CloseBlock) {
-			l.Emit(TokenIdentifier)
+			if l.Current > l.Start {
+				l.Emit(TokenDotIdentifier)
+			}
 			return lexCloseBlock
 		}
-		if l.NextHasPrefix(NewLine) {
-			l.Errorf("Incorrect formatting! Received New Line within a {{ block }}")
+
+		switch r := l.Next(); {
+		case r == EOF || r == '\n':
+			l.Errorf("Error Lexing a variable in a {{ block }}, No closing block found")
+		case golex.IsSpace(r):
+			l.Backup()
+			if l.Current > l.Start {
+				l.Emit(TokenDotIdentifier)
+			}
+			l.Next()
+			l.Ignore()
+			return lexIdentifier
 		}
-		l.Errorf("Error Lexing a {{ block }}, No closing block found")
 	}
 }
 
-func lexVariable(l *golex.Lexer) golex.StateFn {
+func lexIdentifier(l *golex.Lexer) golex.StateFn {
 	for {
-		if golex.IsSpace(l.Next()) {
-			l.Backup()
-			l.Emit(TokenVariable)
-			l.Ignore()
-			return lexVariable
-		}
 		if l.NextHasPrefix(CloseBlock) {
-			l.Emit(TokenVariable)
+			if l.Current > l.Start {
+				l.Emit(TokenIdentifier)
+			}
 			return lexCloseBlock
 		}
-		if l.NextHasPrefix(NewLine) {
-			l.Errorf("Incorrect formatting! Received New Line within a {{ block }}")
+
+		switch r := l.Next(); {
+		case r == EOF || r == '\n':
+			l.Errorf("Error Lexing a variable in a {{ block }}, No closing block found")
+		case golex.IsSpace(r):
+			l.Backup()
+			if l.Current > l.Start {
+				l.Emit(TokenIdentifier)
+			}
+			l.Next()
+			l.Ignore()
+			return lexIdentifier
 		}
-		l.Errorf("Error Lexing a variable in a {{ block }}, No closing block found")
 	}
 }
 
