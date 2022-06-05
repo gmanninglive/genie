@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -32,17 +33,24 @@ func (t Task) Run() {
 }
 
 func (t Task) runCommand(c Command, tplvars TplVars) {
-	parsed := t.Parser.Parse(c.Template, tplvars)
+	file, err := os.ReadFile(c.Template)
+	if err != nil {
+		panic(err)
+	}
+
+	template := string(file)
+	parsed := t.Parser.Parse(template, tplvars)
 
 	c.Output = filepath.Join(c.Directory, c.Filename)
-	fmt.Println(parsed)
+
+	//fmt.Println(parsed)
 	WriteFile(c, []byte(parsed))
 	fmt.Printf("created: %s\n", c.Output)
 }
 
 func (t Task) parseSchedule(c Command) Command {
-	//c.Directory = raymond.MustRender(c.Directory, t.Vars)
-	//c.Filename = raymond.MustRender(c.Filename, t.Vars)
+	c.Directory = t.Parser.Parse(c.Directory, t.Vars)
+	c.Filename = t.Parser.Parse(c.Filename, t.Vars)
 	c.Template = filepath.Join(GENIE.BASE, c.Template)
 
 	return c

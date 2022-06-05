@@ -4,7 +4,7 @@ type Props = {
   data: any
 };
 
-const {{ .toUpper name }}Page: NextPage<Props> = ({ data }) => {
+const {{ .toTitle name }}Page: NextPage<Props> = ({ data }) => {
   return (
     <>
       <h1>Generated {{ name }} page</h1>
@@ -12,4 +12,4 @@ const {{ .toUpper name }}Page: NextPage<Props> = ({ data }) => {
   )
 };
 
-export default {{ name }}Page
+export default {{ .toTitle name }}Page

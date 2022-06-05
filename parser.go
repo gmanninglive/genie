@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"genie/helpers"
 	"genie/lexer"
-	"os"
+	"reflect"
 	"strings"
 
 	"github.com/gmanninglive/golex"
@@ -20,17 +20,11 @@ type Parser struct {
 }
 
 // Public method for initialising and running the parser
-func (p Parser) Parse(templatePath string, vars TplVars) string {
+func (p Parser) Parse(template string, vars TplVars) string {
 	p.Helpers = helpers.Init()
-	file, err := os.ReadFile(templatePath)
-	if err != nil {
-		panic(err)
-	}
 	p.vars = vars
 
-	fileStr := string(file)
-
-	l := lexer.Lex(fileStr)
+	l := lexer.Lex(template)
 
 	p.run(l)
 
@@ -50,6 +44,7 @@ func (p *Parser) run(l *golex.Lexer) {
 			p.Queue.finished <- true
 			return
 		}
+		//fmt.Printf("Token: %s\n", token.Val)
 		p.Queue.push(token)
 	}
 }
@@ -67,9 +62,9 @@ func (p *Parser) stateMachine() {
 			case lexer.TokenNewLine:
 				p.parseNewLine(tok)
 			case lexer.TokenOpenBlock:
-				// ignore
+				// skip
 			case lexer.TokenCloseBlock:
-				// ignore
+				// skip
 			case lexer.TokenDotIdentifier:
 				p.parseDotIdentifier(tok)
 			case lexer.TokenIdentifier:
@@ -94,21 +89,48 @@ func (p *Parser) parseNewLine(tok Token) {
 	fmt.Fprintf(&p.out, tok.Val)
 }
 
+// Parse Dot Identifier aka Helper function
+// If specified helper is not valid parser will skip to next state
+// If args for helper are not valid parser will skip to next state
 func (p *Parser) parseDotIdentifier(tok Token) {
-	fmt.Printf("Next Position %o\n", len(p.out.String()))
-
-	helper := p.Helpers[tok.Val]
-	fmt.Printf("helper: %s\n", helper)
-	args := make([]Token, 1)
-	for i := range args {
-		args[i] = <-p.Queue.tokens
+	helper, valid := p.Helpers[tok.Val[1:]]
+	if !valid {
+		fmt.Printf("Helper Error: %s Is not a valid helper function\n", tok.Val[1:])
+		return
 	}
-	fmt.Println(args)
+
+	helperType := reflect.TypeOf(helper)
+	var helperArgs []reflect.Kind
+
+	for i := 0; i < helperType.NumIn(); i++ {
+		helperArgs = append(helperArgs, helperType.In(i).Kind())
+	}
+
+	// Array of args, taken from the next tokens enqueued by the lexer
+	// Checks if arg type matches type required by helper function
+	// Returns early if invalid type
+	args := make([]reflect.Value, len(helperArgs))
+	for i := range args {
+		token := <-p.Queue.tokens
+		args[i] = reflect.ValueOf(p.vars[token.Val])
+		if args[i].Kind() != helperArgs[i] {
+			fmt.Printf("Helper Error: %s Is not a valid argument for helper %s. Expected type: %s\n",
+				args[i], tok.Val[1:], helperArgs[i])
+			return
+		}
+	}
+
+	// Call function and convert to string,
+	// Currently all helpers should return a string
+	fnCall := reflect.ValueOf(helper).Call(args)
+	res := fnCall[0].Interface().(string)
+	p.out.Grow(len(res))
+	fmt.Fprintf(&p.out, res)
 }
 
+// Replaces Indentifier with the ctx variable
 func (p *Parser) parseIdentifier(tok Token) {
-	fmt.Println(len(tok.Val), tok.Val)
-	if val, isIn := p.vars[strings.TrimSpace(tok.Val)]; isIn {
+	if val, isIn := p.vars[tok.Val]; isIn {
 		p.out.Grow(len(val))
 		fmt.Fprintf(&p.out, val)
 	}
@@ -125,7 +147,7 @@ type Pqueue struct {
 // Initialise parser queue, returns queue pointer
 func (q *Pqueue) Init() *Pqueue {
 	return &Pqueue{
-		tokens:   make(chan Token, 2),
+		tokens:   make(chan Token),
 		finished: make(chan bool),
 	}
 }
