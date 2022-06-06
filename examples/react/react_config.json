@@ -4,7 +4,7 @@
     "schedule": [
       {
         "directory": "pages",
-        "filename": "{{ .toTitle name}}.tsx",
+        "filename": "{{ .toTitle name }}.tsx",
         "template": "templates/pages/nextpage.hbs"
       }
     ],

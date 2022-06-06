@@ -1,47 +1,51 @@
 package lexer
 
 import (
-	"os"
 	"testing"
+
+	"github.com/gmanninglive/golex"
 )
 
-const testString = "<div>{{name}}</div>"
-
 func TestLex(t *testing.T) {
-
-  l := New("test", testString)
-	var received []Token
-  for l.State != nil {
-    received = append(received, l.NextToken())
-  }
-
-	t.Log("length", len(received))
-
-	if len(received) != 5 {
-		t.Errorf("Expected 5 tokens, got %d", len(received))
+	testStrings := []string{
+		"<div>{{.dotIdentifier Name}}</div>",
+		"<div>{{ .dotIdentifier Name}}</div>",
+		"<div>{{ .dotIdentifier Name}}</div>",
+		"<div>{{.dotIdentifier Name}}</div>",
 	}
+	for i := range testStrings {
+		l := Lex(testStrings[i])
 
-	t.Run("With hbs template", func (t *testing.T) {
-		f, err := os.ReadFile("../examples/example_template.hbs")
-  	if err != nil {
-			panic(err)
-		}
-
-		l := New("hbs", string(f))
-		var received []Token
+		var received []golex.Token
 		for {
-			select {
-			case tok := <-l.Tokens:
-			l.Run()
-			received = append(received, tok)
-			t.Log("Token", tok.Val)
+			token, done := l.Listen()
+			if done {
+				break
 			}
+			t.Logf("Token: %s\n", token.Val)
+			received = append(received, token)
 		}
 
-		t.Log("length", len(received))
-
-		if len(received) != 9 {
-			t.Errorf("Expected 9 tokens, got %d", len(received))
+		if len(received) != 6 {
+			t.Errorf("Expected 6 tokens received: %o\n", len(received))
 		}
-	})
+		if received[0].Typ != TokenText {
+			t.Errorf("run: %o. Expected %o, Received: %o\n", i, TokenText, received[0].Typ)
+		}
+		if received[1].Typ != TokenOpenBlock {
+			t.Errorf("run: %o. Expected %o, Received: %o\n", i, TokenOpenBlock, received[1].Typ)
+		}
+		if received[2].Typ != TokenDotIdentifier {
+			t.Errorf("run: %o. Expected %o, Received: %o\n", i, TokenDotIdentifier, received[2].Typ)
+		}
+		if received[3].Typ != TokenIdentifier {
+			t.Errorf("run: %o. Expected %o, Received: %o\n", i, TokenIdentifier, received[3].Typ)
+		}
+		if received[4].Typ != TokenCloseBlock {
+			t.Errorf("run: %o. Expected %o, Received: %o\n", i, TokenCloseBlock, received[4].Typ)
+		}
+		if received[5].Typ != TokenText {
+			t.Errorf("run: %o. Expected %o, Received: %o\n", i, TokenText, received[5].Typ)
+		}
+	}
 }

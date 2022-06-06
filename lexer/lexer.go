@@ -21,24 +21,23 @@ const EOF = golex.EOF
 func baseStateFn(l *golex.Lexer) golex.StateFn {
 	for {
 		if l.NextHasPrefix(NewLine) {
-			l.Emit(TokenText)
+			l.CheckEmit(TokenText)
 			return lexNewLine
 		}
 		if l.NextHasPrefix(OpenBlock) {
-			l.Emit(TokenText)
+			l.CheckEmit(TokenText)
 			return lexOpenBlock
 		}
 		if l.NextHasPrefix(CloseBlock) {
-			l.Emit(TokenText)
+			l.CheckEmit(TokenText)
 			return lexCloseBlock
 		}
 		if l.Next() == golex.EOF {
 			break
 		}
 	}
-	if l.Current > l.Start {
-		l.Emit(TokenText)
-	}
+
+	l.CheckEmit(TokenText)
 
 	l.Emit(golex.TokenEOF)
 	return nil
@@ -47,24 +46,23 @@ func baseStateFn(l *golex.Lexer) golex.StateFn {
 func lexOpenBlock(l *golex.Lexer) golex.StateFn {
 	l.Current += len(OpenBlock)
 	l.Emit(TokenOpenBlock)
-
-	if golex.IsSpace(l.Next()) {
-		l.Ignore()
+	for {
+		if l.NextHasPrefix(".") {
+			return lexDotIndentifier
+		}
+		switch r := l.Next(); {
+		case golex.IsSpace(r):
+			l.Ignore()
+		case golex.IsAlpha(r):
+			return lexIdentifier
+		}
 	}
-
-	if l.NextHasPrefix(".") {
-		return lexDotIndentifier
-	}
-
-	return lexIdentifier
 }
 
 func lexDotIndentifier(l *golex.Lexer) golex.StateFn {
 	for {
 		if l.NextHasPrefix(CloseBlock) {
-			if l.Current > l.Start {
-				l.Emit(TokenDotIdentifier)
-			}
+			l.CheckEmit(TokenDotIdentifier)
 			return lexCloseBlock
 		}
 
@@ -73,9 +71,8 @@ func lexDotIndentifier(l *golex.Lexer) golex.StateFn {
 			l.Errorf("Error Lexing a variable in a {{ block }}, No closing block found")
 		case golex.IsSpace(r):
 			l.Backup()
-			if l.Current > l.Start {
-				l.Emit(TokenDotIdentifier)
-			}
+			l.CheckEmit(TokenDotIdentifier)
+
 			l.Next()
 			l.Ignore()
 			return lexIdentifier
@@ -86,9 +83,8 @@ func lexDotIndentifier(l *golex.Lexer) golex.StateFn {
 func lexIdentifier(l *golex.Lexer) golex.StateFn {
 	for {
 		if l.NextHasPrefix(CloseBlock) {
-			if l.Current > l.Start {
-				l.Emit(TokenIdentifier)
-			}
+			l.CheckEmit(TokenIdentifier)
+
 			return lexCloseBlock
 		}
 
@@ -97,9 +93,8 @@ func lexIdentifier(l *golex.Lexer) golex.StateFn {
 			l.Errorf("Error Lexing a variable in a {{ block }}, No closing block found")
 		case golex.IsSpace(r):
 			l.Backup()
-			if l.Current > l.Start {
-				l.Emit(TokenIdentifier)
-			}
+			l.CheckEmit(TokenIdentifier)
+
 			l.Next()
 			l.Ignore()
 			return lexIdentifier

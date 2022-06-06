@@ -44,7 +44,7 @@ func (p *Parser) run(l *golex.Lexer) {
 			p.Queue.finished <- true
 			return
 		}
-		//fmt.Printf("Token: %s\n", token.Val)
+		//fmt.Printf("Token: %s, Type: %s\n", token.Val, token.Typ)
 		p.Queue.push(token)
 	}
 }
@@ -124,6 +124,7 @@ func (p *Parser) parseDotIdentifier(tok Token) {
 	// Currently all helpers should return a string
 	fnCall := reflect.ValueOf(helper).Call(args)
 	res := fnCall[0].Interface().(string)
+
 	p.out.Grow(len(res))
 	fmt.Fprintf(&p.out, res)
 }

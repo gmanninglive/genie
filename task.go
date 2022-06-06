@@ -43,7 +43,6 @@ func (t Task) runCommand(c Command, tplvars TplVars) {
 
 	c.Output = filepath.Join(c.Directory, c.Filename)
 
-	//fmt.Println(parsed)
 	WriteFile(c, []byte(parsed))
 	fmt.Printf("created: %s\n", c.Output)
 }
