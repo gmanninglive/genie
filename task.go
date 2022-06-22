@@ -7,12 +7,13 @@ import (
 )
 
 type Task struct {
-	Title    string
-	Schedule []Command
-	Params   []string
-	Vars     TplVars
-	Parser   Parser
-	Base     string
+	Title       string
+	Description string
+	Schedule    []Command
+	Params      []string
+	Vars        TplVars
+	Parser      Parser
+	Base        string
 }
 
 type Command struct {
